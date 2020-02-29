@@ -7,6 +7,7 @@ from odoo import models, fields, api, exceptions, _
 class Session(models.Model):
     _name = 'openacademy.session'
     _description = "OpenAcademy Sessions"
+    _inherit = 'mail.thread'
 
     name = fields.Char(required=True)
     # start_date = fields.Date()
@@ -16,6 +17,7 @@ class Session(models.Model):
     seats = fields.Integer(string="Number of seats")
     active = fields.Boolean(default=True)
     color = fields.Integer()
+    biography = fields.Html()
 
     # instructor_id = fields.Many2one('res.partner', string="Instructor")
     instructor_id = fields.Many2one('res.partner', string="Instructor",

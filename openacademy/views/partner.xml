@@ -11,6 +11,7 @@
                         <group>
                             <field name="instructor"/>
                             <field name="session_ids"/>
+                            <field name="inst_ids"/>
                         </group>
                     </page>
                 </notebook>
