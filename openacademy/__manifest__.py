@@ -20,7 +20,7 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'board','website'],
+    'depends': ['base', 'board','website','account'],
 
     # always loaded
     'data': [
@@ -32,6 +32,7 @@
         'views/partner.xml',
         'views/reports.xml',
         'views/session_board.xml',
+        'views/wizard_views.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

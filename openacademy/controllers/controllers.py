@@ -19,8 +19,6 @@ class Academy(http.Controller):
             'partners': Partners.search([])
         })
 
-  
-
     @http.route('/my/<model("res.partner"):partner>/', auth='public', website=True)
     def partner(self, partner):
         sessions = list(partner.inst_ids)

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import random
 from datetime import timedelta
 from odoo import models, fields, api, exceptions, _
 
@@ -18,6 +19,21 @@ class Session(models.Model):
     active = fields.Boolean(default=True)
     color = fields.Integer()
     biography = fields.Html()
+    price_per_hour = fields.Integer(help="Price")
+    total = fields.Integer(help="total", compute='sub_total_session')
+
+
+
+    # For the workflow
+    state = fields.Selection([
+        ('draft', "Draft"),
+        ('confirm', "IN Progress"),
+        ('validate', "Validated"),
+    ], default='draft', string='State')
+
+    button_invoice = fields.Boolean(string='Button Invoice')
+    invoice_ids = fields.One2many("account.move", "session_id")
+    invoice_count = fields.Integer(string="count invoice", compute="_compute_invoice_count")
 
     # instructor_id = fields.Many2one('res.partner', string="Instructor")
     instructor_id = fields.Many2one('res.partner', string="Instructor",
@@ -35,6 +51,7 @@ class Session(models.Model):
 
     attendees_count = fields.Integer(
         string="Attendees count", compute='_get_attendees_count', store=True)
+    date = fields.Date(required=True, default=fields.Date.context_today)
 
     # computed field
     @api.depends('start_date', 'duration')
@@ -44,8 +61,6 @@ class Session(models.Model):
                 r.end_date = r.start_date
                 continue
 
-            # Add duration to start_date, but: Monday + 5 days = Saturday, so
-            # subtract one second to get on Friday instead
             duration = timedelta(days=r.duration, seconds=-1)
             r.end_date = r.start_date + duration
 
@@ -91,17 +106,17 @@ class Session(models.Model):
                 },
             }
 
-    """@api.onchange('seats', 'attendee_ids')
-    def _count_seat_duration(self):
-        # set auto-changing field
-        self.testy = self.seats < len(self.attendee_ids);
-        # Can optionally return a warning and domains
-        return {
-            'warning': {
-                'title': "Something bad happened",
-                'message': "It was very bad indeed",
-            }
-        }"""
+    # @api.onchange('seats', 'attendee_ids')
+    # def _count_seat_duration(self):
+    #     # set auto-changing field
+    #     self.testy = self.seats < len(self.attendee_ids);
+    #     # Can optionally return a warning and domains
+    #     return {
+    #         'warning': {
+    #             'title': "Something bad happened",
+    #             'message': "It was very bad indeed",
+    #         }
+    #     }
 
     # constraintes python
     @api.constrains('instructor_id', 'attendee_ids')
@@ -109,3 +124,72 @@ class Session(models.Model):
         for r in self:
             if r.instructor_id and r.instructor_id in r.attendee_ids:
                 raise exceptions.ValidationError("A session's instructor can't be an attendee")
+
+    def confirm(self):
+        self.write({
+            'state': 'confirm'
+        })
+
+    def validate(self):
+        self.write({
+            'state': 'validate',
+        })
+
+    def invoice(self):
+        self.button_invoice = True
+        data = {
+            'session_id': self.id,
+            'partner_id': self.instructor_id.id,
+            'type': 'in_invoice',
+            'invoice_date': self.date,
+            "invoice_line_ids": [],
+        }
+
+        line = {
+            "name": self.name,
+            "quantity": self.duration,
+            "price_unit": self.price_per_hour,
+
+        }
+        data["invoice_line_ids"].append((0, 0, line))
+        invoice2 = self.env['account.move'].create(data)
+
+    def action_view_invoice(self):
+        invoices = self.mapped('invoice_ids')
+        action = self.env.ref('account.action_move_out_invoice_type').read()[0]
+        if len(invoices) > 1:
+            action['domain'] = [('id', 'in', invoices.ids)]
+        elif len(invoices) == 1:
+            form_view = [(self.env.ref('account.view_move_form').id, 'form')]
+            if 'views' in action:
+                action['views'] = form_view + [(state, view) for state, view in action['views'] if view != 'form']
+            else:
+                action['views'] = form_view
+            action['res_id'] = invoices.id
+        else:
+            action = {'type': 'ir.actions.act_window_close'}
+
+        context = {
+            'default_type': 'out_invoice',
+        }
+
+        action['context'] = context
+        return action
+
+    # to calculate the subtotal of a session
+    def sub_total_session(self):
+        self.total = self.duration * self.price_per_hour
+
+    # def action_draft(self):
+    #     self.state = 'draft'
+    #
+    # def action_confirm(self):
+    #     self.state = 'confirmed'
+    #
+    # def action_done(self):
+    #     self.state = 'done'
+
+    # to count the number of invoices for a session
+    def _compute_invoice_count(self):
+        self.invoice_count = self.env['account.move'].search_count([('session_id', '=', self.id)])
+

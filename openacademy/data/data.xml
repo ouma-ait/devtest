@@ -1,0 +1,15 @@
+<odoo>
+    <data noupdate="1">
+        <record model="ir.actions.act_window" id="contact_cat_list_action">
+            <field name="name"></field>
+            <field name="res_model">res.partner.category</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <record model="account.move.line" id="session">
+            <field name="name">Session N</field>
+        </record>
+
+
+    </data>
+</odoo>
