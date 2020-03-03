@@ -6,15 +6,24 @@
             <field name="model">res.partner</field>
             <field name="inherit_id" ref="base.view_partner_form"/>
             <field name="arch" type="xml">
-                <notebook position="inside">
-                    <page string="Sessions">
-                        <group>
-                            <field name="instructor"/>
-                            <field name="session_ids"/>
-                            <field name="inst_ids"/>
-                        </group>
-                    </page>
-                </notebook>
+                <xpath expr="//form//sheet" position="before">
+                    <header>
+                    <button string="Generate Invoice"  type="object" class="oe_highlight" name="facturer1"/>
+                    </header>
+                </xpath>
+                <div class="oe_button_box" name="button_box">
+                       <button  name="facturer2" type="object" class="oe_stat_button" icon="fa-pencil-square-o">
+                         <field name="invoice_count" widget="statinfo" string="Invoices"/>
+                        </button>
+                </div>
+            <notebook position="inside">
+                <page string="Sessions">
+                    <group>
+                        <field name="instructor"/>
+                        <field name="session_ids"/>
+                    </group>
+                </page>
+            </notebook>
             </field>
         </record>
 

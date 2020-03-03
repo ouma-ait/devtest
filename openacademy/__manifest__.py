@@ -33,6 +33,7 @@
         'views/reports.xml',
         'views/session_board.xml',
         'views/wizard_views.xml',
+        'data/data.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

@@ -56,7 +56,6 @@
                                 <field name="start_date"/>
                                 <field name="duration"/>
                                 <field name="seats"/>
-                                 <field name="price_per_hour"/>
                                  <field name="taken_seats" widget="progressbar"/>
 
                             </group>

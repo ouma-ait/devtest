@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import random
 from datetime import timedelta
+
 from odoo import models, fields, api, exceptions, _
 
 
@@ -19,10 +19,6 @@ class Session(models.Model):
     active = fields.Boolean(default=True)
     color = fields.Integer()
     biography = fields.Html()
-    price_per_hour = fields.Integer(help="Price")
-    total = fields.Integer(help="total", compute='sub_total_session')
-
-
 
     # For the workflow
     state = fields.Selection([
@@ -86,7 +82,7 @@ class Session(models.Model):
             else:
                 r.taken_seats = 100.0 * len(r.attendee_ids) / r.seats
 
-    # onchange : warn about negatif number of seats / attendee_ids > seats
+    # onchange : warn about negative number of seats / attendee_ids > seats
     @api.onchange('seats', 'attendee_ids')
     def _verify_valid_seats(self):
         if self.seats < 0:
@@ -118,7 +114,7 @@ class Session(models.Model):
     #         }
     #     }
 
-    # constraintes python
+    # constraints python
     @api.constrains('instructor_id', 'attendee_ids')
     def _check_instructor_not_in_attendees(self):
         for r in self:
@@ -136,6 +132,9 @@ class Session(models.Model):
         })
 
     def invoice(self):
+        id_product_template = self.env['product.template'].search([('name', 'ilike', 'Session')]).id
+        id_product_product = self.env['product.product'].search([('product_tmpl_id', '=', id_product_template)]).id
+        list_price_product_template = self.env['product.template'].search([('name', 'ilike', 'Session')]).list_price
         self.button_invoice = True
         data = {
             'session_id': self.id,
@@ -148,7 +147,8 @@ class Session(models.Model):
         line = {
             "name": self.name,
             "quantity": self.duration,
-            "price_unit": self.price_per_hour,
+            "price_unit": list_price_product_template,
+            "product_id": id_product_product,
 
         }
         data["invoice_line_ids"].append((0, 0, line))
@@ -176,20 +176,6 @@ class Session(models.Model):
         action['context'] = context
         return action
 
-    # to calculate the subtotal of a session
-    def sub_total_session(self):
-        self.total = self.duration * self.price_per_hour
-
-    # def action_draft(self):
-    #     self.state = 'draft'
-    #
-    # def action_confirm(self):
-    #     self.state = 'confirmed'
-    #
-    # def action_done(self):
-    #     self.state = 'done'
-
-    # to count the number of invoices for a session
     def _compute_invoice_count(self):
         self.invoice_count = self.env['account.move'].search_count([('session_id', '=', self.id)])
-
+    

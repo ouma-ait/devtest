@@ -15,8 +15,9 @@ class Academy(http.Controller):
     @http.route(['/my/', '/my/home'], website=True, auth='user')
     def index(self, **kw):
         Partners = http.request.env['res.partner']
+        id_user = http.request.env.user.partner_id.id
         return http.request.render('openacademy.sessionMenu', {
-            'partners': Partners.search([])
+            'partners': Partners.search([('id', '=', id_user)])
         })
 
     @http.route('/my/<model("res.partner"):partner>/', auth='public', website=True)
