@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models, api
+from odoo import fields, models, api, exceptions, _
 
 
 class Partner(models.Model):
@@ -29,13 +29,23 @@ class Partner(models.Model):
         list_price_product_template = self.env['product.template'].search([('name', 'ilike', 'Session')]).list_price
         data = {
             'partner_id': self.id,
-            'type': 'out_invoice',
+            'type': 'out_invoice',  # for the customer
             "invoice_line_ids": [],
         }
         list = []
         quantity = 0
+        val = 0
         for line in self.session_ids:
-            quantity = quantity + line.duration
+            if line.state == 'validate':
+                val = val + 1
+                quantity = quantity + line.duration
+                line.state = 'invoiced'
+
+        if len(self.session_ids) == 0:
+            raise exceptions.ValidationError("This instructor has no sessions")
+        if val == 0:
+            raise exceptions.ValidationError("A session not validated can not be invoiced")
+
         line1 = {
             "name": line.name,
             "quantity": quantity,
@@ -47,6 +57,23 @@ class Partner(models.Model):
         for element in list:
             data["invoice_line_ids"].append((0, 0, element))
         invoice = self.env['account.move'].create(data)
+
+        invoices = self.mapped('invoice_ids')
+        action = self.env.ref('account.action_move_out_invoice_type').read()[0]
+
+        form_view = [(self.env.ref('account.view_move_form').id, 'form')]
+        if 'views' in action:
+            action['views'] = form_view + [(state, view) for state, view in action['views'] if view != 'form']
+        else:
+            action['views'] = form_view
+        action['res_id'] = invoices.id
+
+        context = {
+            'default_type': 'out_invoice',
+        }
+
+        action['context'] = context
+        return action
 
     def facturer2(self):
         invoices = self.mapped('invoice_ids')

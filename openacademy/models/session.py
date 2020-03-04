@@ -25,6 +25,7 @@ class Session(models.Model):
         ('draft', "Draft"),
         ('confirm', "IN Progress"),
         ('validate', "Validated"),
+        ('invoiced', "Invoiced"),
     ], default='draft', string='State')
 
     button_invoice = fields.Boolean(string='Button Invoice')
