@@ -96,3 +96,12 @@ class Partner(models.Model):
 
         action['context'] = context
         return action
+
+    def print_invoice(self):
+        list_invoices = []
+        invoices = self.mapped('invoice_ids.id')
+        for line in invoices:
+            list_invoices.append(line)
+        invoice_last_id = max(list_invoices)
+        invoice = self.env['account.move'].search([('id', '=', invoice_last_id)])
+        return self.env.ref('account.account_invoices').report_action(invoice)

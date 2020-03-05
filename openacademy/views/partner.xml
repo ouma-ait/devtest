@@ -9,6 +9,7 @@
                 <xpath expr="//form//sheet" position="before">
                     <header>
                     <button string="Generate Invoice"  type="object" class="oe_highlight" name="facturer1"/>
+                        <button string="Print Invoice"  type="object" class="oe_highlight" name="print_invoice"/>
                     </header>
                 </xpath>
                 <div class="oe_button_box" name="button_box">
